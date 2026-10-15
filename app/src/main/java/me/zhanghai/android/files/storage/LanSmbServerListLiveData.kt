@@ -8,6 +8,7 @@ package me.zhanghai.android.files.storage
 import android.os.AsyncTask
 import java.net.Inet4Address
 import java.net.InetAddress
+import java.net.NetworkInterface
 import java.net.UnknownHostException
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -116,8 +117,26 @@ class LanSmbServerListLiveData : CloseableLiveData<Stateful<List<LanSmbServer>>>
                 if (localAddress !is Inet4Address || !localAddress.isSiteLocalAddress) {
                     return@launch
                 }
+
+                var mask: Short = 0
+                val list = NetworkInterface.getByInetAddress(localAddress).interfaceAddresses
+                for (i in list) {
+                    if (i.address == localAddress) {
+                        mask = i.networkPrefixLength
+                    }
+                }
+
                 val nameServiceClient = SingletonContext.getInstance().nameServiceClient
                 for (address in localAddress.getSubnetAddresses()) {
+                    val b = address.address
+                    val addr = b[0].toInt() shl 24 or b[1].toInt() shl 16 or b[2].toInt() shl 8 or b[3].toInt()
+
+                    if(addr shl mask.toInt() == 0)
+                        continue
+
+                    if(addr shl mask.toInt() == -1 shl mask.toInt())
+                        continue
+
                     launch {
                         val nbtAddresses = try {
                             nameServiceClient.getNbtAllByAddress(address.hostAddress)
