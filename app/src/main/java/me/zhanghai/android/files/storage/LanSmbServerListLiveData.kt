@@ -138,7 +138,7 @@ class LanSmbServerListLiveData : CloseableLiveData<Stateful<List<LanSmbServer>>>
             for (i in 0..99) {
                 for (j in 0..2) {
                     val lastBit = 100 * j + i
-                    if (lastBit > 255) {
+                    if (lastBit >= 255 || lastBit == 0) {
                         continue
                     }
                     addressBytes[3] = lastBit.toByte()
